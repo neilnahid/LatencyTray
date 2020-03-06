@@ -32,11 +32,11 @@ namespace LatencyTray
             drawing.Save();
             return Icon.FromHandle(image.GetHicon());
         }
-        public long getLatency(string address)
+        public long getLatency(string address, Ping pinger)
         {
             try
             {
-                var response = new Ping().Send(address);
+                var response = pinger.Send(address);
                 var time = response.RoundtripTime > 0 ? response.RoundtripTime : (long)999.0;
                 return time;
             }
@@ -47,30 +47,39 @@ namespace LatencyTray
         }
         public async void startLatencyTray()
         {
+            var pinger = new Ping();
+            var image = new Bitmap(16, 16);
             while (true)
             {
                 await Task.Delay(1000);
                 //notifyIcon.Icon = createIconFromText(getLatency("google.com"));
                 //notifyIcon.Icon = createIconFromText("25");
-                switch (getLatency("google.com"))
+                switch (getLatency("122.11.128.127", pinger))
                 {
                     case long n when (n <= 100):
-                        notifyIcon.Icon = createIconFromSolidColor(Color.Green);
+                        notifyIcon.Icon = createIconFromSolidColor(Color.Green, image);
                         break;
                     case long n when (n <= 200):
-                        notifyIcon.Icon = createIconFromSolidColor(Color.Yellow);
+                        notifyIcon.Icon = createIconFromSolidColor(Color.Yellow, image);
                         break;
                     default:
-                        notifyIcon.Icon = createIconFromSolidColor(Color.Red);
+                        notifyIcon.Icon = createIconFromSolidColor(Color.Red, image);
                         break;
                 }
             }
         }
-        public Icon createIconFromSolidColor(Color color)
+        public Icon createIconFromSolidColor(Color color, Bitmap image)
         {
-            var image = new Bitmap(16, 16);
-            Graphics.FromImage(image).Clear(color);
-            return Icon.FromHandle(image.GetHicon());
+            try
+            {
+
+                Graphics.FromImage(image).Clear(color);
+                return Icon.FromHandle(image.GetHicon());
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         private void closeToolStripMenuItem_Click(object sender, EventArgs e)
